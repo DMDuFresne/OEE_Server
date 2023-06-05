@@ -1,13 +1,25 @@
+from flask import jsonify
 from app.models.oee import OeeModel
 
 
 def calculate_oee(data):
-    oee_model = OeeModel(**data)
 
-    availability = oee_model.run_time / oee_model.planned_production_time
-    performance = (oee_model.total_count / oee_model.run_time) / oee_model.ideal_run_rate
-    quality = oee_model.good_count / oee_model.total_count
+    try:
 
-    oee = availability * performance * quality
+        oee_model = OeeModel(**data)
+        availability = oee_model.calculate_availability()
+        performance = oee_model.calculate_performance()
+        quality = oee_model.calculate_quality()
+        oee = oee_model.calculate_oee()
+        return {"availability": availability, "performance": performance, "quality": quality, "oee": oee}
 
-    return {"oee": oee}
+    except ValueError as e:
+
+        print(f"Error calculating OEE: {e}")
+        return jsonify({'error': f'Error calculating OEE: {e}'}), 400
+
+    except Exception as e:
+
+        print(f"Error calculating OEE: {e}")
+        return jsonify({'error': f'Error calculating OEE: {e}'}), 500
+
