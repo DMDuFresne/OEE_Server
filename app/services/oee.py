@@ -1,6 +1,9 @@
 # Import the necessary modules
 from flask import jsonify
+from datetime import datetime
 from app.models.oee import OeeModel
+
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f%z"
 
 
 def calculate_oee(data):
@@ -15,9 +18,20 @@ def calculate_oee(data):
         performance = oee_model.calculate_performance()
         quality = oee_model.calculate_quality()
         oee = oee_model.calculate_oee()
+        timestamp = datetime.now().strftime(DATETIME_FORMAT)
 
         # Return the calculated values as a dictionary
-        return {"availability": availability, "performance": performance, "quality": quality, "oee": oee}
+        return {
+            "availability": availability,
+            "performance": performance,
+            "quality": quality,
+            "oee": oee,
+            "availabilityString": f'{availability*100:.0f}%',
+            "performanceString": f'{performance*100:.0f}%',
+            "qualityString": f'{quality*100:.0f}%',
+            "oeeString": f'{oee*100:.0f}%',
+            "timestamp": timestamp,
+        }
 
     except ValueError as e:
 

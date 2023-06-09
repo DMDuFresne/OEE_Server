@@ -4,12 +4,12 @@ from app.services.oee import calculate_oee
 from app.limiter import limiter
 
 # Create a Flask blueprint for OEE calculations
-oee = Blueprint('oee', __name__)
+oee_blueprint = Blueprint('oee', __name__)
 
 # Define the routes for OEE
 
 
-@oee.route('/oee/calculate', methods=['POST'])
+@oee_blueprint.route('/calculate', methods=['POST'])
 @limiter.limit("60/minute")
 def calculate():
     data = request.get_json()
