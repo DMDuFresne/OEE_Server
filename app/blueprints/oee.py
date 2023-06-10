@@ -18,9 +18,9 @@ def calculate():
     return result
 
 
-@oee_blueprint.route('/calculate_and_log', methods=['POST'])
+@oee_blueprint.route('/calculate/store', methods=['POST'])
 @limiter.limit("60/minute")
-def calculate_and_log():
+def calculate_and_store():
     data = request.get_json()
     result = calculate_oee(data)
 

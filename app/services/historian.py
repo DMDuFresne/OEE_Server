@@ -7,7 +7,6 @@ load_dotenv()
 
 def create_oee_data_table():
     try:
-
         # Establish a connection to the database
         conn = psycopg2.connect(
             dbname=os.getenv("DB_NAME"),
@@ -32,8 +31,13 @@ def create_oee_data_table():
             """
         )
 
-        # Add time series hypertable to the table
-        cur.execute("SELECT create_hypertable('oee_data', 'time', chunk_time_interval => INTERVAL '1 day')")
+        try:
+            # Add time series hypertable to the table
+            cur.execute("SELECT create_hypertable('oee_data', 'time', chunk_time_interval => INTERVAL '1 day')")
+        except psycopg2.DatabaseError as hypertable_error:
+            # Handle hypertable creation error (table is already a hypertable)
+            # You can choose to ignore the error or handle it in a specific way
+            print(f"Hypertable creation error: {str(hypertable_error)}")
 
         # Commit changes and close the connection
         conn.commit()
@@ -43,12 +47,10 @@ def create_oee_data_table():
         return {"message": "Successfully created the oee_data table in TimescaleDB"}, 200
 
     except psycopg2.DatabaseError as e:
-
         # Handle database errors
         raise e
 
     except Exception as e:
-
         # Handle any other errors
         raise e
 
