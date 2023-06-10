@@ -26,10 +26,6 @@ def calculate_oee(data):
             "performance": performance,
             "quality": quality,
             "oee": oee,
-            "availabilityString": f'{availability*100:.0f}%',
-            "performanceString": f'{performance*100:.0f}%',
-            "qualityString": f'{quality*100:.0f}%',
-            "oeeString": f'{oee*100:.0f}%',
             "timestamp": timestamp,
         }
 
