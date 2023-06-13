@@ -63,28 +63,69 @@ function displayResult(result) {
   // Show the result container
   const resultContainer = document.getElementById("resultContainer");
   resultContainer.classList.remove("hidden");
-  resultContainer.innerHTML = ""; // Clear previous content
 
-  // Update the result values in the UI
-  const availabilityElement = document.createElement("p");
-  availabilityElement.textContent = `Availability: ${result.availability}`;
-  resultContainer.appendChild(availabilityElement);
+  // Format the OEE results as percentages with up to 2 decimal points
+  const formattedAvailability = (parseFloat(result.availability) * 100).toFixed(2) + "%";
+  const formattedPerformance = (parseFloat(result.performance) * 100).toFixed(2) + "%";
+  const formattedQuality = (parseFloat(result.quality) * 100).toFixed(2) + "%";
+  const formattedOEE = (parseFloat(result.oee) * 100).toFixed(2) + "%";
 
-  const performanceElement = document.createElement("p");
-  performanceElement.textContent = `Performance: ${result.performance}`;
-  resultContainer.appendChild(performanceElement);
+  // Update the innerHTML of the resultContainer with the formatted OEE values and gauges
+  resultContainer.innerHTML = `
+    <h1>OEE</h1>
+    <label>Availability</label>
+    <div class="result-item">
+      <div class="oee-gauge">
+        <div class="oee-fill" id="availabilityBar"></div>
+        <div class="oee-label" id="availabilityLabel">${formattedAvailability}</div>
+      </div>
+    </div>
+    <label>Performance</label>
+    <div class="result-item">
+      <div class="oee-gauge">
+        <div class="oee-fill" id="performanceBar"></div>
+        <div class="oee-label" id="performanceLabel">${formattedPerformance}</div>
+      </div>
+    </div>
+    <label>Quality</label>
+    <div class="result-item">
+      <div class="oee-gauge">
+        <div class="oee-fill" id="qualityBar"></div>
+        <div class="oee-label" id="qualityLabel">${formattedQuality}</div>
+      </div>
+    </div>
+    <label>OEE</label>
+    <div class="result-item">
+      <div class="oee-gauge">
+        <div class="oee-fill" id="oeeBar"></div>
+        <div class="oee-label" id="oeeLabel">${formattedOEE}</div>
+      </div>
+    </div>
+    <p id="timestamp">Timestamp: ${result.timestamp}</p>
+  `;
 
-  const qualityElement = document.createElement("p");
-  qualityElement.textContent = `Quality: ${result.quality}`;
-  resultContainer.appendChild(qualityElement);
+  // Update the gauges
+  updateGauge(parseFloat(result.availability), "availabilityBar");
+  updateGauge(parseFloat(result.performance), "performanceBar");
+  updateGauge(parseFloat(result.quality), "qualityBar");
+  updateGauge(parseFloat(result.oee), "oeeBar");
+}
 
-  const oeeElement = document.createElement("p");
-  oeeElement.textContent = `OEE: ${result.oee}`;
-  resultContainer.appendChild(oeeElement);
+function updateGauge(value, gaugeId) {
+  const gaugeElement = document.getElementById(gaugeId);
 
-  const timestampElement = document.createElement("p");
-  timestampElement.textContent = `Timestamp: ${result.timestamp}`;
-  resultContainer.appendChild(timestampElement);
+  if (gaugeElement) {
+    gaugeElement.style.width = value * 100 + "%";
+
+    // Update the gauge color based on the value
+    if (value > 0.8) {
+      gaugeElement.style.backgroundColor = "var(--success-color)";
+    } else if (value > 0.6) {
+      gaugeElement.style.backgroundColor = "var(--primary-color)";
+    } else {
+      gaugeElement.style.backgroundColor = "var(--danger-color)";
+    }
+  }
 }
 
 // Function to display an error message in the UI
