@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OEE Calculator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>OEE Calculator</h1>
+      <form id="oeeForm">
+        <div class="form-group">
+          <label for="goodCount">Good Count:</label>
+          <input type="number" id="goodCount" name="goodCount" required>
+        </div>
+        <div class="form-group">
+          <label for="totalCount">Total Count:</label>
+          <input type="number" id="totalCount" name="totalCount" required>
+        </div>
+        <div class="form-group">
+          <label for="runTime">Run Time (in seconds):</label>
+          <input type="number" id="runTime" name="runTime" required>
+        </div>
+        <div class="form-group">
+          <label for="totalTime">Total Time (in seconds):</label>
+          <input type="number" id="totalTime" name="totalTime" required>
+        </div>
+        <div class="form-group">
+          <label for="targetCount">Target Count:</label>
+          <input type="number" id="targetCount" name="targetCount" required>
+        </div>
+        <button type="submit">Calculate OEE</button>
+      </form>
+    </div>
+    <div id="resultContainer" class="card hidden">
+      <h2>Calculated OEE:</h2>
+      <p id="availability"></p>
+      <p id="performance"></p>
+      <p id="quality"></p>
+      <p id="oee"></p>
+      <p id="timestamp"></p>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

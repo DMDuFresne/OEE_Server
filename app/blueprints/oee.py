@@ -1,5 +1,5 @@
 # Import necessary modules
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from app.services.oee import calculate_oee
 from app.services.historian import insert_oee_data
 from app.limiter import limiter
