@@ -2,6 +2,7 @@ from flask import Flask
 from .limiter import limiter
 from .database import db
 from config import DevelopmentConfig
+from .blueprints.asset import asset_blueprint
 from .blueprints.oee import oee_blueprint
 from .blueprints.historian import historian_blueprint
 
@@ -12,6 +13,7 @@ def create_app():
 
     limiter.init_app(app)
 
+    app.register_blueprint(asset_blueprint, url_prefix='/asset')
     app.register_blueprint(oee_blueprint, url_prefix='/oee')
     app.register_blueprint(historian_blueprint, url_prefix='/historian')  # Register the historian blueprint
 
