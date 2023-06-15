@@ -265,7 +265,7 @@ class AreaModel(AssetModel):
 class LineModel(AssetModel):
     table_name = 'obj_lines'
     object_name = 'line'
-    object_type = 2
+    object_type = 1
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
