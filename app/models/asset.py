@@ -227,35 +227,30 @@ class AssetModel:
                 if enterprise not in hierarchy:
                     hierarchy[enterprise] = {
                         'sites': {},
-                        'type': 'Enterprise',
-                        'instance': asset_factory.get_asset(4)().get(asset_id).to_dict()
+                        'data': asset_factory.get_asset(4)().get(asset_id).to_dict()
                     }
 
                 if site is not None and site not in hierarchy[enterprise]['sites']:
                     hierarchy[enterprise]['sites'][site] = {
                         'areas': {},
-                        'type': 'Site',
-                        'instance': asset_factory.get_asset(3)().get(asset_id).to_dict()
+                        'data': asset_factory.get_asset(3)().get(asset_id).to_dict()
                     }
 
                 if area is not None and area not in hierarchy[enterprise]['sites'][site]['areas']:
                     hierarchy[enterprise]['sites'][site]['areas'][area] = {
                         'lines': {},
-                        'type': 'Area',
-                        'instance': asset_factory.get_asset(2)().get(asset_id).to_dict()
+                        'data': asset_factory.get_asset(2)().get(asset_id).to_dict()
                     }
 
                 if line is not None and line not in hierarchy[enterprise]['sites'][site]['areas'][area]['lines']:
                     hierarchy[enterprise]['sites'][site]['areas'][area]['lines'][line] = {
                         'cells': {},
-                        'type': 'Line',
-                        'instance': asset_factory.get_asset(1)().get(asset_id).to_dict()
+                        'data': asset_factory.get_asset(1)().get(asset_id).to_dict()
                     }
 
                 if cell is not None:
                     hierarchy[enterprise]['sites'][site]['areas'][area]['lines'][line]['cells'][cell] = {
-                        'type': 'Cell',
-                        'instance': asset_factory.get_asset(0)().get(asset_id).to_dict()
+                        'data': asset_factory.get_asset(0)().get(asset_id).to_dict()
                     }
 
             return hierarchy
@@ -274,21 +269,6 @@ class EnterpriseModel(AssetModel):
         super().__init__(**kwargs)
         self.object_type = EnterpriseModel.object_type
 
-    def create(self):
-        return super().create()
-
-    def get(self, asset_id):
-        return super().get(asset_id)
-
-    def update(self, asset_id):
-        return super().update(asset_id)
-
-    def delete(self):
-        return super().delete()
-
-    def get_all(self):
-        return super().get_all()
-
 
 class SiteModel(AssetModel):
     table_name = 'obj_sites'
@@ -298,21 +278,6 @@ class SiteModel(AssetModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.object_type = SiteModel.object_type
-
-    def create(self):
-        return super().create()
-
-    def get(self, asset_id):
-        return super().get(asset_id)
-
-    def update(self, asset_id):
-        return super().update(asset_id)
-
-    def delete(self):
-        return super().delete()
-
-    def get_all(self):
-        return super().get_all()
 
 
 class AreaModel(AssetModel):
@@ -324,21 +289,6 @@ class AreaModel(AssetModel):
         super().__init__(**kwargs)
         self.object_type = AreaModel.object_type
 
-    def create(self):
-        return super().create()
-
-    def get(self, asset_id):
-        return super().get(asset_id)
-
-    def update(self, asset_id):
-        return super().update(asset_id)
-
-    def delete(self):
-        return super().delete()
-
-    def get_all(self):
-        return super().get_all()
-
 
 class LineModel(AssetModel):
     table_name = 'obj_lines'
@@ -349,21 +299,6 @@ class LineModel(AssetModel):
         super().__init__(**kwargs)
         self.object_type = LineModel.object_type
 
-    def create(self):
-        return super().create()
-
-    def get(self, asset_id):
-        return super().get(asset_id)
-
-    def update(self, asset_id):
-        return super().update(asset_id)
-
-    def delete(self):
-        return super().delete()
-
-    def get_all(self):
-        return super().get_all()
-
 
 class CellModel(AssetModel):
     table_name = 'obj_cells'
@@ -373,18 +308,3 @@ class CellModel(AssetModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.object_type = CellModel.object_type
-
-    def create(self):
-        return super().create()
-
-    def get(self, asset_id):
-        return super().get(asset_id)
-
-    def update(self, asset_id):
-        return super().update(asset_id)
-
-    def delete(self):
-        return super().delete()
-
-    def get_all(self):
-        return super().get_all()
