@@ -208,7 +208,7 @@ class AssetModel:
             raise Exception(f"An error occurred while fetching all {self.object_name}.")
 
     @staticmethod
-    def get_everything():
+    def get_tree():
         try:
             query = "SELECT * FROM public.vw_obj_all"
             assets = AssetModel.fetch_all(query)
@@ -225,32 +225,33 @@ class AssetModel:
                 asset_id = item['object_id']
 
                 if enterprise not in hierarchy:
+                    asset_data = asset_factory.get_asset(4)().get(asset_id).to_dict()
                     hierarchy[enterprise] = {
-                        'sites': {},
-                        'data': asset_factory.get_asset(4)().get(asset_id).to_dict()
+                        **asset_data
                     }
 
-                if site is not None and site not in hierarchy[enterprise]['sites']:
-                    hierarchy[enterprise]['sites'][site] = {
-                        'areas': {},
-                        'data': asset_factory.get_asset(3)().get(asset_id).to_dict()
+                if site is not None and site not in hierarchy[enterprise]:
+                    asset_data = asset_factory.get_asset(3)().get(asset_id).to_dict()
+                    hierarchy[enterprise][site] = {
+                        **asset_data
                     }
 
-                if area is not None and area not in hierarchy[enterprise]['sites'][site]['areas']:
-                    hierarchy[enterprise]['sites'][site]['areas'][area] = {
-                        'lines': {},
-                        'data': asset_factory.get_asset(2)().get(asset_id).to_dict()
+                if area is not None and area not in hierarchy[enterprise][site]:
+                    asset_data = asset_factory.get_asset(2)().get(asset_id).to_dict()
+                    hierarchy[enterprise][site][area] = {
+                        **asset_data
                     }
 
-                if line is not None and line not in hierarchy[enterprise]['sites'][site]['areas'][area]['lines']:
-                    hierarchy[enterprise]['sites'][site]['areas'][area]['lines'][line] = {
-                        'cells': {},
-                        'data': asset_factory.get_asset(1)().get(asset_id).to_dict()
+                if line is not None and line not in hierarchy[enterprise][site][area]:
+                    asset_data = asset_factory.get_asset(1)().get(asset_id).to_dict()
+                    hierarchy[enterprise][site][area][line] = {
+                        **asset_data
                     }
 
                 if cell is not None:
-                    hierarchy[enterprise]['sites'][site]['areas'][area]['lines'][line]['cells'][cell] = {
-                        'data': asset_factory.get_asset(0)().get(asset_id).to_dict()
+                    asset_data = asset_factory.get_asset(0)().get(asset_id).to_dict()
+                    hierarchy[enterprise][site][area][line][cell] = {
+                        **asset_data
                     }
 
             return hierarchy

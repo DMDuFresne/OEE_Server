@@ -85,9 +85,9 @@ def delete_asset(asset_class, asset_id):
         return jsonify({'error': 'An error occurred while deleting the asset.'}), 500
 
 
-def get_everything():
+def get_tree():
     try:
-        assets = AssetModel.get_everything()
+        assets = AssetModel.get_tree()
         return jsonify({
             'data': assets,
             'message': 'All assets retrieved successfully'

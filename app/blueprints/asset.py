@@ -8,8 +8,8 @@ asset_blueprint = Blueprint('asset', __name__, url_prefix='/asset')
 
 
 @asset_blueprint.route('/all', methods=['GET'])
-def get_everything_route():
-    return get_everything()
+def get_tree_route():
+    return get_tree()
 
 
 def create_asset_route(asset_class, create_func):
