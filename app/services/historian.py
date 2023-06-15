@@ -4,6 +4,7 @@ from flask import jsonify
 from dotenv import load_dotenv
 
 load_dotenv()
+# TODO Move this functionality into the oee model
 
 
 def create_oee_data_table():
@@ -141,4 +142,3 @@ def insert_oee_data(oee_data):
 
 # Call the create_oee_data_table function to create the table
 create_oee_data_table()
-
