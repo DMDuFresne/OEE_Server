@@ -1,5 +1,6 @@
 import os
 import psycopg2
+from flask import jsonify
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,10 +24,17 @@ def create_oee_data_table():
             """
             CREATE TABLE IF NOT EXISTS oee_data (
                 time TIMESTAMPTZ NOT NULL,
+                run_time DOUBLE PRECISION,
+                total_time DOUBLE PRECISION,
+                total_count DOUBLE PRECISION,
+                target_count DOUBLE PRECISION,
+                good_count DOUBLE PRECISION,
                 availability DOUBLE PRECISION,
                 performance DOUBLE PRECISION,
                 quality DOUBLE PRECISION,
-                oee DOUBLE PRECISION
+                oee DOUBLE PRECISION,
+                object_type INTEGER,
+                object_id INTEGER
             )
             """
         )
@@ -57,13 +65,24 @@ def create_oee_data_table():
 
 def insert_oee_data(oee_data):
 
-    # Ensure the data is a dictionary with the necessary keys
-    required_keys = {'availability', 'performance', 'quality', 'oee', 'timestamp'}
-    if not isinstance(oee_data, dict) or not required_keys.issubset(oee_data.keys()):
-        return {
-            "error":
-                "Data must be a dictionary with keys: 'availability', 'performance', 'quality', 'oee', 'timestamp'"
-        }, 400
+    required_fields = [
+        'run_time',
+        'total_time',
+        'total_count',
+        'target_count',
+        'good_count',
+        'availability',
+        'performance',
+        'quality',
+        'oee',
+        'timestamp',
+        'object_type',
+        'object_id'
+    ]
+
+    for field in required_fields:
+        if field not in oee_data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
 
     try:
 
@@ -80,13 +99,25 @@ def insert_oee_data(oee_data):
         cur = conn.cursor()
 
         cur.execute(
-            "INSERT INTO oee_data (availability, performance, quality, oee, time) VALUES (%s, %s, %s, %s, %s)",
+            """
+            INSERT INTO oee_data (
+            run_time, total_time, total_count, target_count, good_count,
+            availability, performance, quality, oee, time, object_type, object_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
             (
+                oee_data['run_time'],
+                oee_data['total_time'],
+                oee_data['total_count'],
+                oee_data['target_count'],
+                oee_data['good_count'],
                 oee_data['availability'],
                 oee_data['performance'],
                 oee_data['quality'],
                 oee_data['oee'],
-                oee_data['timestamp']
+                oee_data['timestamp'],
+                oee_data['object_type'],
+                oee_data['object_id']
             )
         )
 

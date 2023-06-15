@@ -20,14 +20,15 @@ def calculate_oee(data):
         oee = oee_model.calculate_oee()
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
 
-        # Return the calculated values as a dictionary
-        return {
-            "availability": availability,
-            "performance": performance,
-            "quality": quality,
-            "oee": oee,
-            "timestamp": timestamp,
-        }
+        # Add the new values to the existing data dictionary
+        data["availability"] = availability
+        data["performance"] = performance
+        data["quality"] = quality
+        data["oee"] = oee
+        data["timestamp"] = timestamp
+
+        # Return the updated data dictionary
+        return data
 
     except ValueError as e:
 
@@ -38,4 +39,3 @@ def calculate_oee(data):
 
         print(f"Error calculating OEE: {e}")
         return jsonify({'error': f'Error calculating OEE: {e}'}), 500
-
