@@ -7,6 +7,11 @@ from app.models.asset import EnterpriseModel, SiteModel, AreaModel, LineModel, C
 asset_blueprint = Blueprint('asset', __name__, url_prefix='/asset')
 
 
+@asset_blueprint.route('/all', methods=['GET'])
+def get_everything_route():
+    return get_everything()
+
+
 def create_asset_route(asset_class, create_func):
     @limiter.limit("60/minute")
     def route_create_asset():

@@ -2,7 +2,9 @@ import os
 import psycopg2
 from psycopg2 import pool
 from dotenv import load_dotenv
+from contextlib import contextmanager
 import logging
+from .asset_factory import asset_factory
 
 # Load environment variables
 load_dotenv()
@@ -15,6 +17,8 @@ logger = logging.getLogger(__name__)
 class AssetModel:
     connection_pool = None
     table_name = None  # Add a class attribute for the table name
+    object_name = 'asset'
+    object_type = None
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
@@ -22,6 +26,15 @@ class AssetModel:
         self.description = kwargs.get('description')
         self.parent_id = kwargs.get('parent_id')
         self.object_type = kwargs.get('asset_type')
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "parent_id": self.parent_id,
+            "object_type": self.object_type,
+        }
 
     @staticmethod
     def get_connection():
@@ -43,78 +56,83 @@ class AssetModel:
             AssetModel.connection_pool.putconn(connection)
 
     @staticmethod
-    def execute_query(query, params):
-        conn = None
+    def handle_db_error(e):
+        logger.error(f"Database error occurred. {e}")
+        if 'no results to fetch' in str(e):
+            raise Exception("No results to fetch. Please check your query.")
+        else:
+            raise Exception("An error occurred while fetching data from the database.")
+
+    @staticmethod
+    @contextmanager
+    def get_db_connection():
+        conn = AssetModel.get_connection()
         try:
-            conn = AssetModel.get_connection()
-            with conn.cursor() as cur:
-                cur.execute(query, params)
-                conn.commit()
-
-                if 'RETURNING' in query:
-                    result = cur.fetchone()
-                    if result and len(result) > 0:
-                        return result
-
-        except (Exception, psycopg2.DatabaseError) as e:
-            logger.error(e)
-            if conn is not None:
-                conn.rollback()  # rollback the transaction on errors
-            raise Exception(f"Database query execution failed. {e}")
-
+            yield conn
         finally:
             if conn is not None:
                 AssetModel.release_connection(conn)
+
+    @staticmethod
+    def execute_query(query, params):
+        try:
+            with AssetModel.get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, params)
+                    conn.commit()
+
+                    if 'RETURNING' in query:
+                        result = cur.fetchone()
+                        if result and len(result) > 0:
+                            return result
+
+        except psycopg2.DatabaseError as e:
+            AssetModel.handle_db_error(e)
+        except Exception as e:
+            logger.error(f"Database query execution failed. {e}")
+            raise Exception("An error occurred while executing the database query.")
 
     @staticmethod
     def fetch_one(query, params):
-        conn = None
         try:
-            conn = AssetModel.get_connection()
-            with conn.cursor() as cur:
-                cur.execute(query, params)
-                result = cur.fetchone()
-                if result is None:
-                    raise Exception("No data found.")
-                columns = [col[0] for col in cur.description]
-                data = dict(zip(columns, result))
-                return data
-        except (Exception, psycopg2.DatabaseError) as e:
-            logger.error(e)
-            if conn is not None:
-                conn.rollback()  # rollback the transaction on errors
-            raise Exception(f"Failed to fetch data from database. {e}")
+            with AssetModel.get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, params)
+                    result = cur.fetchone()
+                    if result is None:
+                        result = []
+                    columns = [col[0] for col in cur.description]
+                    data = dict(zip(columns, result))
+                    return data
 
-        finally:
-            if conn is not None:
-                AssetModel.release_connection(conn)
+        except psycopg2.DatabaseError as e:
+            AssetModel.handle_db_error(e)
+        except Exception as e:
+            logger.error(f"Failed to fetch data from database. {e}")
+            raise Exception("An error occurred while fetching data from the database.")
 
     @staticmethod
     def fetch_all(query, params=None):
-        conn = None
         try:
-            conn = AssetModel.get_connection()
-            with conn.cursor() as cur:
-                if params is None:
-                    cur.execute(query)
-                else:
-                    cur.execute(query, params)
+            with AssetModel.get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    if params is None:
+                        cur.execute(query)
+                    else:
+                        cur.execute(query, params)
 
-                result = cur.fetchall()
-                if len(result) == 0:
-                    raise ValueError("No data found.")
-                columns = [col[0] for col in cur.description]
-                data = [dict(zip(columns, res)) for res in result]
-                return data
-        except (Exception, psycopg2.DatabaseError) as e:
-            logger.error(e)
-            if conn is not None:
-                conn.rollback()  # rollback the transaction on errors
-            raise Exception(f"Failed to fetch data from database. {e}")
+                    result = cur.fetchall()
+                    if len(result) == 0:
+                        result = []
+                    columns = [col[0] for col in cur.description]
+                    data = [dict(zip(columns, res)) for res in result]
+                    return data
 
-        finally:
-            if conn is not None:
-                AssetModel.release_connection(conn)
+        except psycopg2.DatabaseError as e:
+            AssetModel.handle_db_error(e)
+        except Exception as e:
+            logger.error(f"Failed to fetch data from database. {e}")
+            raise Exception("An error occurred while fetching data from the database.")
 
     def create(self):
 
@@ -134,7 +152,8 @@ class AssetModel:
                 raise Exception("Failed to retrieve the ID of the inserted row")
 
         except Exception as e:
-            raise Exception(f"Failed to create {self.table_name}. {e}")
+            logger.error(f"Failed to create {self.table_name}. {e}")
+            raise Exception(f"An error occurred while creating the {self.object_name}.")
 
     def get(self, asset_id):
         try:
@@ -147,10 +166,9 @@ class AssetModel:
             if data:
                 self.__dict__.update(data)
                 return self
-            else:
-                raise ValueError("No data found for the given asset ID.")
         except Exception as e:
-            raise Exception(f"Failed to get {self.table_name}. {e}")
+            logger.error(f"Failed to get  {self.table_name}. {e}")
+            raise Exception(f"An error occurred while fetching the {self.object_name}.")
 
     def update(self, asset_id):
         try:
@@ -162,7 +180,8 @@ class AssetModel:
             return asset
 
         except Exception as e:
-            raise Exception(f"Failed to update {self.table_name}. {e}")
+            logger.error(f"Failed to update {self.table_name}. {e}")
+            raise Exception(f"An error occurred while updating the {self.object_name}.")
 
     def delete(self):
         try:
@@ -171,7 +190,8 @@ class AssetModel:
                 (self.id,)
             )
         except Exception as e:
-            raise Exception(f"Failed to delete {self.table_name}. {e}")
+            logger.error(f"Failed to delete {self.table_name}. {e}")
+            raise Exception(f"An error occurred while deleting the {self.object_name}.")
 
     def get_all(self):
         try:
@@ -184,7 +204,65 @@ class AssetModel:
             assets = [AssetModel(**item) for item in data]
             return assets
         except Exception as e:
-            raise Exception(f"Failed to get all {self.table_name}. {e}")
+            logger.error(f"Failed to get all {self.table_name}. {e}")
+            raise Exception(f"An error occurred while fetching all {self.object_name}.")
+
+    @staticmethod
+    def get_everything():
+        try:
+            query = "SELECT * FROM public.vw_obj_all"
+            assets = AssetModel.fetch_all(query)
+
+            hierarchy = {}
+
+            for item in assets:
+                enterprise = item['enterprise']
+                site = item['site']
+                area = item['area']
+                line = item['line']
+                cell = item['cell']
+
+                asset_id = item['object_id']
+
+                if enterprise not in hierarchy:
+                    hierarchy[enterprise] = {
+                        'sites': {},
+                        'type': 'Enterprise',
+                        'instance': asset_factory.get_asset(4)().get(asset_id).to_dict()
+                    }
+
+                if site is not None and site not in hierarchy[enterprise]['sites']:
+                    hierarchy[enterprise]['sites'][site] = {
+                        'areas': {},
+                        'type': 'Site',
+                        'instance': asset_factory.get_asset(3)().get(asset_id).to_dict()
+                    }
+
+                if area is not None and area not in hierarchy[enterprise]['sites'][site]['areas']:
+                    hierarchy[enterprise]['sites'][site]['areas'][area] = {
+                        'lines': {},
+                        'type': 'Area',
+                        'instance': asset_factory.get_asset(2)().get(asset_id).to_dict()
+                    }
+
+                if line is not None and line not in hierarchy[enterprise]['sites'][site]['areas'][area]['lines']:
+                    hierarchy[enterprise]['sites'][site]['areas'][area]['lines'][line] = {
+                        'cells': {},
+                        'type': 'Line',
+                        'instance': asset_factory.get_asset(1)().get(asset_id).to_dict()
+                    }
+
+                if cell is not None:
+                    hierarchy[enterprise]['sites'][site]['areas'][area]['lines'][line]['cells'][cell] = {
+                        'type': 'Cell',
+                        'instance': asset_factory.get_asset(0)().get(asset_id).to_dict()
+                    }
+
+            return hierarchy
+
+        except Exception as e:
+            logger.error(f"Failed to fetch all assets: {str(e)}", exc_info=True)
+            raise Exception("An error occurred while fetching all assets.")
 
 
 class EnterpriseModel(AssetModel):
@@ -213,7 +291,7 @@ class EnterpriseModel(AssetModel):
 
 
 class SiteModel(AssetModel):
-    path = 'enterprise'
+    table_name = 'obj_sites'
     object_name = 'site'
     object_type = 3
 
