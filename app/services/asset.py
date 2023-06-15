@@ -1,11 +1,11 @@
 from flask import jsonify
-from app.models.asset import EnterpriseModel, SiteModel, AreaModel
+from app.models.asset import *
+# ^ This needs to stay - the models are passed from the route blueprint, and will fail without the import here.
 
 
-def create_enterprise(data):
-
+def create_asset(asset_class, data):
     try:
-        asset = EnterpriseModel(**data)
+        asset = asset_class(**data)
         asset.create()
         if asset:
             return jsonify(asset.__dict__), 200
@@ -15,18 +15,19 @@ def create_enterprise(data):
         return jsonify({'error': str(e)}), 500
 
 
-def get_all_enterprises():
+def get_all_assets(asset_class):
     try:
-        enterprises = EnterpriseModel.get_all()
-        serialized = [enterprise.__dict__ for enterprise in enterprises]
+        asset_instance = asset_class()
+        assets = asset_instance.get_all()
+        serialized = [asset.__dict__ for asset in assets]
         return jsonify(serialized), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
-def get_enterprise(asset_id):
+def get_asset(asset_class, asset_id):
     try:
-        asset = EnterpriseModel().get(asset_id)
+        asset = asset_class().get(asset_id)
         if asset:
             return jsonify(asset.__dict__), 200
         else:
@@ -35,141 +36,23 @@ def get_enterprise(asset_id):
         return jsonify({'error': str(e)}), 500
 
 
-def update_enterprise(data, asset_id):
+def update_asset(asset_class, data, asset_id):
     try:
-        asset = EnterpriseModel(**data)
+        asset = asset_class(**data)
         asset.update(asset_id)
         return jsonify(asset.__dict__), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
-def delete_enterprise(asset_id):
+def delete_asset(asset_class, asset_id):
     try:
-        asset = EnterpriseModel().get(asset_id)
+        asset = asset_class().get(asset_id)
         if asset:
             asset.delete()
             return jsonify({
                 'asset': asset.__dict__,
-                'message': 'Enterprise deleted successfully'
-            }), 200
-        else:
-            return jsonify({'error': 'Asset not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# Sites
-# ----------
-def create_site(data):
-
-    try:
-        asset = SiteModel(**data)
-        asset.create()
-        if asset:
-            return jsonify(asset.__dict__), 200
-        else:
-            return jsonify({'error': 'Asset not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-def get_all_sites():
-    try:
-        sites = SiteModel.get_all()
-        serialized = [site.__dict__ for site in sites]
-        return jsonify(serialized), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-def get_site(asset_id):
-    try:
-        asset = SiteModel().get(asset_id)
-        if asset:
-            return jsonify(asset.__dict__), 200
-        else:
-            return jsonify({'error': 'Asset not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-def update_site(data, asset_id):
-    try:
-        asset = SiteModel(**data)
-        asset.update(asset_id)
-        return jsonify(asset.__dict__), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-def delete_site(asset_id):
-    try:
-        asset = SiteModel().get(asset_id)
-        if asset:
-            asset.delete()
-            return jsonify({
-                'asset': asset.__dict__,
-                'message': 'Site deleted successfully'
-            }), 200
-        else:
-            return jsonify({'error': 'Asset not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# Areas
-# ----------
-def create_area(data):
-
-    try:
-        asset = AreaModel(**data)
-        asset.create()
-        if asset:
-            return jsonify(asset.__dict__), 200
-        else:
-            return jsonify({'error': 'Asset not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-def get_all_areas():
-    try:
-        areas = AreaModel.get_all()
-        serialized = [area.__dict__ for area in areas]
-        return jsonify(serialized), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-def get_area(asset_id):
-    try:
-        asset = AreaModel().get(asset_id)
-        if asset:
-            return jsonify(asset.__dict__), 200
-        else:
-            return jsonify({'error': 'Asset not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-def update_area(data, asset_id):
-    try:
-        asset = AreaModel(**data)
-        asset.update(asset_id)
-        return jsonify(asset.__dict__), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-def delete_area(asset_id):
-    try:
-        asset = AreaModel().get(asset_id)
-        if asset:
-            asset.delete()
-            return jsonify({
-                'asset': asset.__dict__,
-                'message': 'Area deleted successfully'
+                'message': f'{asset_class.__name__} deleted successfully'
             }), 200
         else:
             return jsonify({'error': 'Asset not found'}), 404

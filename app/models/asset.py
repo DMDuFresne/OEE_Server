@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class AssetModel:
     connection_pool = None
+    table_name = None  # Add a class attribute for the table name
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
@@ -115,34 +116,33 @@ class AssetModel:
             if conn is not None:
                 AssetModel.release_connection(conn)
 
-
-class EnterpriseModel(AssetModel):
     def create(self):
+
         try:
-            result = self.execute_query(
-                "INSERT INTO obj_enterprises (name, description, object_type) VALUES (%s, %s, %s) RETURNING id",
-                (self.name, self.description, 4)
-            )
+            query = f"""
+                INSERT INTO {self.table_name} (name, description, parent_id, object_type) 
+                VALUES (%s, %s, %s, %s) 
+                RETURNING id
+            """
+            result = self.execute_query(query, (self.name, self.description, self.parent_id, self.object_type))
 
             if result:
                 logger.info(result[0])
-                asset = EnterpriseModel.get(self, result[0])
+                asset = self.get(result[0])
                 return asset
             else:
                 raise Exception("Failed to retrieve the ID of the inserted row")
 
         except Exception as e:
-            raise Exception(f"Failed to create enterprise. {e}")
+            raise Exception(f"Failed to create {self.table_name}. {e}")
 
     def get(self, asset_id):
         try:
-            data = self.fetch_one(
-                """
+            data = self.fetch_one(f"""
                 SELECT id, name, description, parent_id, object_type 
-                FROM obj_enterprises 
+                FROM {self.table_name} 
                 WHERE id = %s AND NOT deprecated
-                """,
-                (asset_id,)
+                """, (asset_id,)
             )
             if data:
                 self.__dict__.update(data)
@@ -150,183 +150,163 @@ class EnterpriseModel(AssetModel):
             else:
                 raise ValueError("No data found for the given asset ID.")
         except Exception as e:
-            raise Exception(f"Failed to get enterprise. {e}")
+            raise Exception(f"Failed to get {self.table_name}. {e}")
 
     def update(self, asset_id):
         try:
             self.execute_query(
-                "UPDATE obj_enterprises SET name = %s, description = %s WHERE id = %s AND NOT deprecated",
+                f"UPDATE {self.table_name} SET name = %s, description = %s WHERE id = %s AND NOT deprecated",
                 (self.name, self.description, asset_id)
             )
-            asset = EnterpriseModel.get(self, asset_id)
+            asset = self.get(asset_id)
             return asset
 
         except Exception as e:
-            raise Exception(f"Failed to update enterprise. {e}")
+            raise Exception(f"Failed to update {self.table_name}. {e}")
 
     def delete(self):
         try:
             self.execute_query(
-                "UPDATE obj_enterprises SET deprecated = true WHERE id = %s AND NOT deprecated",
+                f"UPDATE {self.table_name} SET deprecated = true WHERE id = %s AND NOT deprecated",
                 (self.id,)
             )
         except Exception as e:
-            raise Exception(f"Failed to delete enterprise. {e}")
+            raise Exception(f"Failed to delete {self.table_name}. {e}")
 
-    @staticmethod
-    def get_all():
+    def get_all(self):
         try:
-            query = """
+            query = f"""
                 SELECT id, name, description, parent_id, object_type
-                FROM obj_enterprises
+                FROM {self.table_name}
                 WHERE NOT deprecated
             """
-            data = AssetModel.fetch_all(query)
-            enterprises = [EnterpriseModel(**item) for item in data]
-            return enterprises
+            data = self.fetch_all(query)
+            assets = [AssetModel(**item) for item in data]
+            return assets
         except Exception as e:
-            raise Exception(f"Failed to get all enterprises. {e}")
+            raise Exception(f"Failed to get all {self.table_name}. {e}")
+
+
+class EnterpriseModel(AssetModel):
+    table_name = 'obj_enterprises'
+    object_name = 'enterprise'
+    object_type = 4
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.object_type = EnterpriseModel.object_type
+
+    def create(self):
+        return super().create()
+
+    def get(self, asset_id):
+        return super().get(asset_id)
+
+    def update(self, asset_id):
+        return super().update(asset_id)
+
+    def delete(self):
+        return super().delete()
+
+    def get_all(self):
+        return super().get_all()
 
 
 class SiteModel(AssetModel):
+    path = 'enterprise'
+    object_name = 'site'
+    object_type = 3
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.object_type = SiteModel.object_type
+
     def create(self):
-        try:
-            query = """
-                INSERT INTO obj_sites (name, description, parent_id, object_type) 
-                VALUES (%s, %s, %s, %s) 
-                RETURNING id
-            """
-            result = self.execute_query(query, (self.name, self.description, self.parent_id, 3))
-
-            if result:
-                logger.info(result[0])
-                asset = SiteModel.get(self, result[0])
-                return asset
-            else:
-                raise Exception("Failed to retrieve the ID of the inserted row")
-
-        except Exception as e:
-            raise Exception(f"Failed to create site. {e}")
+        return super().create()
 
     def get(self, asset_id):
-        try:
-            data = self.fetch_one("""
-                SELECT id, name, description, parent_id, object_type 
-                FROM obj_sites 
-                WHERE id = %s AND NOT deprecated
-                """, (asset_id,)
-            )
-            if data:
-                self.__dict__.update(data)
-                return self
-            else:
-                raise ValueError("No data found for the given asset ID.")
-        except Exception as e:
-            raise Exception(f"Failed to get site. {e}")
+        return super().get(asset_id)
 
     def update(self, asset_id):
-        try:
-            self.execute_query(
-                "UPDATE obj_sites SET name = %s, description = %s WHERE id = %s AND NOT deprecated",
-                (self.name, self.description, asset_id)
-            )
-            asset = SiteModel.get(self, asset_id)
-            return asset
-
-        except Exception as e:
-            raise Exception(f"Failed to update site. {e}")
+        return super().update(asset_id)
 
     def delete(self):
-        try:
-            self.execute_query(
-                "UPDATE obj_sites SET deprecated = true WHERE id = %s AND NOT deprecated",
-                (self.id,)
-            )
-        except Exception as e:
-            raise Exception(f"Failed to delete site. {e}")
+        return super().delete()
 
-    @staticmethod
-    def get_all():
-        try:
-            query = """
-                SELECT id, name, description, parent_id, object_type
-                FROM obj_sites
-                WHERE NOT deprecated
-            """
-            data = AssetModel.fetch_all(query)
-            enterprises = [SiteModel(**item) for item in data]
-            return enterprises
-        except Exception as e:
-            raise Exception(f"Failed to get all sites. {e}")
+    def get_all(self):
+        return super().get_all()
 
 
 class AreaModel(AssetModel):
+    table_name = 'obj_areas'
+    object_name = 'area'
+    object_type = 2
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.object_type = AreaModel.object_type
+
     def create(self):
-        try:
-            query = """
-                INSERT INTO obj_areas (name, description, parent_id, object_type) 
-                VALUES (%s, %s, %s, %s) 
-                RETURNING id
-            """
-            result = self.execute_query(query, (self.name, self.description, self.parent_id, 3))
-
-            if result:
-                logger.info(result[0])
-                asset = AreaModel.get(self, result[0])
-                return asset
-            else:
-                raise Exception("Failed to retrieve the ID of the inserted row")
-
-        except Exception as e:
-            raise Exception(f"Failed to create area. {e}")
+        return super().create()
 
     def get(self, asset_id):
-        try:
-            data = self.fetch_one("""
-                SELECT id, name, description, parent_id, object_type 
-                FROM obj_areas 
-                WHERE id = %s AND NOT deprecated
-                """, (asset_id,)
-            )
-            if data:
-                self.__dict__.update(data)
-                return self
-            else:
-                raise ValueError("No data found for the given asset ID.")
-        except Exception as e:
-            raise Exception(f"Failed to get area. {e}")
+        return super().get(asset_id)
 
     def update(self, asset_id):
-        try:
-            self.execute_query(
-                "UPDATE obj_areas SET name = %s, description = %s WHERE id = %s AND NOT deprecated",
-                (self.name, self.description, asset_id)
-            )
-            asset = AreaModel.get(self, asset_id)
-            return asset
-
-        except Exception as e:
-            raise Exception(f"Failed to update area. {e}")
+        return super().update(asset_id)
 
     def delete(self):
-        try:
-            self.execute_query(
-                "UPDATE obj_areas SET deprecated = true WHERE id = %s AND NOT deprecated",
-                (self.id,)
-            )
-        except Exception as e:
-            raise Exception(f"Failed to delete area. {e}")
+        return super().delete()
 
-    @staticmethod
-    def get_all():
-        try:
-            query = """
-                SELECT id, name, description, parent_id, object_type
-                FROM obj_areas
-                WHERE NOT deprecated
-            """
-            data = AssetModel.fetch_all(query)
-            enterprises = [AreaModel(**item) for item in data]
-            return enterprises
-        except Exception as e:
-            raise Exception(f"Failed to get all areas. {e}")
+    def get_all(self):
+        return super().get_all()
+
+
+class LineModel(AssetModel):
+    table_name = 'obj_lines'
+    object_name = 'line'
+    object_type = 2
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.object_type = LineModel.object_type
+
+    def create(self):
+        return super().create()
+
+    def get(self, asset_id):
+        return super().get(asset_id)
+
+    def update(self, asset_id):
+        return super().update(asset_id)
+
+    def delete(self):
+        return super().delete()
+
+    def get_all(self):
+        return super().get_all()
+
+
+class CellModel(AssetModel):
+    table_name = 'obj_cells'
+    object_name = 'cell'
+    object_type = 0
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.object_type = CellModel.object_type
+
+    def create(self):
+        return super().create()
+
+    def get(self, asset_id):
+        return super().get(asset_id)
+
+    def update(self, asset_id):
+        return super().update(asset_id)
+
+    def delete(self):
+        return super().delete()
+
+    def get_all(self):
+        return super().get_all()

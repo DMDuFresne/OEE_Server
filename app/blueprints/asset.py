@@ -1,116 +1,130 @@
 from flask import Blueprint, request
 from app.services.asset import *
 from app.limiter import limiter
-
-asset_blueprint = Blueprint('asset', __name__)
-
-
-@asset_blueprint.route('/enterprise/create', methods=['POST'])
-@limiter.limit("60/minute")
-def route_create_enterprise():
-    data = request.get_json()
-    result = create_enterprise(data)
-    return result
+from app.models.asset import EnterpriseModel, SiteModel, AreaModel, LineModel, CellModel
 
 
-@asset_blueprint.route('/enterprise/all', methods=['GET'])
-@limiter.limit("60/minute")
-def route_get_all_enterprises():
-    result = get_all_enterprises()
-    return result
+asset_blueprint = Blueprint('asset', __name__, url_prefix='/asset')
 
 
-@asset_blueprint.route('/enterprise/<int:asset_id>', methods=['GET'])
-@limiter.limit("60/minute")
-def route_get_enterprise(asset_id):
-    result = get_enterprise(asset_id)
-    return result
+def create_asset_route(asset_class, create_func):
+    @limiter.limit("60/minute")
+    def route_create_asset():
+        data = request.get_json()
+        result = create_func(asset_class, data)
+        return result
+
+    endpoint_name = f'route_create_{asset_class.__name__.lower()}'
+    route_path = f'/{asset_class.object_name.lower()}/create'
+    asset_blueprint.add_url_rule(
+        route_path,
+        endpoint=endpoint_name,
+        view_func=route_create_asset,
+        methods=['POST']
+    )
+    # print(f"Created route: POST {route_path} => {endpoint_name}")
 
 
-@asset_blueprint.route('/enterprise/<int:asset_id>', methods=['PUT'])
-@limiter.limit("60/minute")
-def route_update_enterprise(asset_id):
-    data = request.get_json()
-    result = update_enterprise(data, asset_id)
-    return result
+def get_all_assets_route(asset_class, get_all_func):
+    @limiter.limit("60/minute")
+    def route_get_all_assets():
+        result = get_all_func(asset_class)
+        return result
+
+    endpoint_name = f'route_get_all_{asset_class.__name__.lower()}'
+    route_path = f'/{asset_class.object_name.lower()}/all'
+    asset_blueprint.add_url_rule(
+        route_path,
+        endpoint=endpoint_name,
+        view_func=route_get_all_assets,
+        methods=['GET']
+    )
+    # print(f"Created route: GET {route_path} => {endpoint_name}")
 
 
-@asset_blueprint.route('/enterprise/<int:asset_id>', methods=['DELETE'])
-@limiter.limit("60/minute")
-def route_delete_enterprise(asset_id):
-    result = delete_enterprise(asset_id)
-    return result
+def get_asset_route(asset_class, get_func):
+    @limiter.limit("60/minute")
+    def route_get_asset(asset_id):
+        result = get_func(asset_class, asset_id)
+        return result
+
+    endpoint_name = f'route_get_{asset_class.__name__.lower()}'
+    route_path = f'/{asset_class.object_name.lower()}/<int:asset_id>'
+    asset_blueprint.add_url_rule(
+        route_path,
+        endpoint=endpoint_name,
+        view_func=route_get_asset,
+        methods=['GET']
+    )
+    # print(f"Created route: GET {route_path} => {endpoint_name}")
 
 
-@asset_blueprint.route('/site/create', methods=['POST'])
-@limiter.limit("60/minute")
-def route_create_site():
-    data = request.get_json()
-    result = create_site(data)
-    return result
+def update_asset_route(asset_class, update_func):
+    @limiter.limit("60/minute")
+    def route_update_asset(asset_id):
+        data = request.get_json()
+        result = update_func(asset_class, data, asset_id)
+        return result
+
+    endpoint_name = f'route_update_{asset_class.__name__.lower()}'
+    route_path = f'/{asset_class.object_name.lower()}/<int:asset_id>'
+    asset_blueprint.add_url_rule(
+        route_path,
+        endpoint=endpoint_name,
+        view_func=route_update_asset,
+        methods=['PUT']
+    )
+    # print(f"Created route: PUT {route_path} => {endpoint_name}")
 
 
-@asset_blueprint.route('/site/all', methods=['GET'])
-@limiter.limit("60/minute")
-def route_get_all_sites():
-    result = get_all_sites()
-    return result
+def delete_asset_route(asset_class, delete_func):
+    @limiter.limit("60/minute")
+    def route_delete_asset(asset_id):
+        result = delete_func(asset_class, asset_id)
+        return result
+
+    endpoint_name = f'route_delete_{asset_class.__name__.lower()}'
+    route_path = f'/{asset_class.object_name.lower()}/<int:asset_id>'
+    asset_blueprint.add_url_rule(
+        route_path,
+        endpoint=endpoint_name,
+        view_func=route_delete_asset,
+        methods=['DELETE']
+    )
+    # print(f"Created route: DELETE {route_path} => {endpoint_name}")
 
 
-@asset_blueprint.route('/site/<int:asset_id>', methods=['GET'])
-@limiter.limit("60/minute")
-def route_get_site(asset_id):
-    result = get_site(asset_id)
-    return result
+# Create asset routes
+create_asset_route(EnterpriseModel, create_asset)
+create_asset_route(SiteModel, create_asset)
+create_asset_route(AreaModel, create_asset)
+create_asset_route(LineModel, create_asset)
+create_asset_route(CellModel, create_asset)
 
+# Get all asset routes
+get_all_assets_route(EnterpriseModel, get_all_assets)
+get_all_assets_route(SiteModel, get_all_assets)
+get_all_assets_route(AreaModel, get_all_assets)
+get_all_assets_route(LineModel, get_all_assets)
+get_all_assets_route(CellModel, get_all_assets)
 
-@asset_blueprint.route('/site/<int:asset_id>', methods=['PUT'])
-@limiter.limit("60/minute")
-def route_update_site(asset_id):
-    data = request.get_json()
-    result = update_site(data, asset_id)
-    return result
+# Get asset routes
+get_asset_route(EnterpriseModel, get_asset)
+get_asset_route(SiteModel, get_asset)
+get_asset_route(AreaModel, get_asset)
+get_asset_route(LineModel, get_asset)
+get_asset_route(CellModel, get_asset)
 
+# Update asset routes
+update_asset_route(EnterpriseModel, update_asset)
+update_asset_route(SiteModel, update_asset)
+update_asset_route(AreaModel, update_asset)
+update_asset_route(LineModel, update_asset)
+update_asset_route(CellModel, update_asset)
 
-@asset_blueprint.route('/site/<int:asset_id>', methods=['DELETE'])
-@limiter.limit("60/minute")
-def route_delete_site(asset_id):
-    result = delete_site(asset_id)
-    return result
-
-
-@asset_blueprint.route('/area/create', methods=['POST'])
-@limiter.limit("60/minute")
-def route_create_area():
-    data = request.get_json()
-    result = create_area(data)
-    return result
-
-
-@asset_blueprint.route('/area/all', methods=['GET'])
-@limiter.limit("60/minute")
-def route_get_all_areas():
-    result = get_all_areas()
-    return result
-
-
-@asset_blueprint.route('/area/<int:asset_id>', methods=['GET'])
-@limiter.limit("60/minute")
-def route_get_area(asset_id):
-    result = get_area(asset_id)
-    return result
-
-
-@asset_blueprint.route('/area/<int:asset_id>', methods=['PUT'])
-@limiter.limit("60/minute")
-def route_update_area(asset_id):
-    data = request.get_json()
-    result = update_area(data, asset_id)
-    return result
-
-
-@asset_blueprint.route('/area/<int:asset_id>', methods=['DELETE'])
-@limiter.limit("60/minute")
-def route_delete_area(asset_id):
-    result = delete_area(asset_id)
-    return result
+# Delete asset routes
+delete_asset_route(EnterpriseModel, delete_asset)
+delete_asset_route(SiteModel, delete_asset)
+delete_asset_route(AreaModel, delete_asset)
+delete_asset_route(LineModel, delete_asset)
+delete_asset_route(CellModel, delete_asset)
