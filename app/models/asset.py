@@ -207,59 +207,6 @@ class AssetModel:
             logger.error(f"Failed to get all {self.table_name}. {e}")
             raise Exception(f"An error occurred while fetching all {self.object_name}.")
 
-    @staticmethod
-    def get_tree():
-        try:
-            query = "SELECT * FROM public.vw_obj_all"
-            assets = AssetModel.fetch_all(query)
-
-            hierarchy = {}
-
-            for item in assets:
-                enterprise = item['enterprise']
-                site = item['site']
-                area = item['area']
-                line = item['line']
-                cell = item['cell']
-
-                asset_id = item['object_id']
-
-                if enterprise not in hierarchy:
-                    asset_data = asset_factory.get_asset(4)().get(asset_id).to_dict()
-                    hierarchy[enterprise] = {
-                        **asset_data
-                    }
-
-                if site is not None and site not in hierarchy[enterprise]:
-                    asset_data = asset_factory.get_asset(3)().get(asset_id).to_dict()
-                    hierarchy[enterprise][site] = {
-                        **asset_data
-                    }
-
-                if area is not None and area not in hierarchy[enterprise][site]:
-                    asset_data = asset_factory.get_asset(2)().get(asset_id).to_dict()
-                    hierarchy[enterprise][site][area] = {
-                        **asset_data
-                    }
-
-                if line is not None and line not in hierarchy[enterprise][site][area]:
-                    asset_data = asset_factory.get_asset(1)().get(asset_id).to_dict()
-                    hierarchy[enterprise][site][area][line] = {
-                        **asset_data
-                    }
-
-                if cell is not None:
-                    asset_data = asset_factory.get_asset(0)().get(asset_id).to_dict()
-                    hierarchy[enterprise][site][area][line][cell] = {
-                        **asset_data
-                    }
-
-            return hierarchy
-
-        except Exception as e:
-            logger.error(f"Failed to fetch all assets: {str(e)}", exc_info=True)
-            raise Exception("An error occurred while fetching all assets.")
-
 
 class EnterpriseModel(AssetModel):
     table_name = 'obj_enterprises'

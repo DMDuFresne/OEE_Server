@@ -1,6 +1,7 @@
 import logging
 from flask import jsonify
 from app.models.asset import *
+from app.models.asset_tree import AssetTreeModel
 
 
 logger = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ def delete_asset(asset_class, asset_id):
 
 def get_tree():
     try:
-        assets = AssetModel.get_tree()
+        assets = AssetTreeModel.get_tree()
         return jsonify({
             'data': assets,
             'message': 'All assets retrieved successfully'
