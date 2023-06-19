@@ -1,26 +1,20 @@
-// Wait for the DOM to be fully loaded
 document.addEventListener("DOMContentLoaded", () => {
-  // Get the form element
   const form = document.getElementById("oeeForm");
 
-  // Add an event listener for the form submission
   form.addEventListener("submit", async (event) => {
-    event.preventDefault(); // Prevent the default form submission
+    event.preventDefault();
 
-    // Get the form values
     const goodCount = parseFloat(document.getElementById("goodCount").value);
     const totalCount = parseFloat(document.getElementById("totalCount").value);
     const runTime = parseFloat(document.getElementById("runTime").value);
     const totalTime = parseFloat(document.getElementById("totalTime").value);
     const targetCount = parseFloat(document.getElementById("targetCount").value);
 
-    // Validate the form values
     if (isNaN(goodCount) || isNaN(totalCount) || isNaN(runTime) || isNaN(totalTime) || isNaN(targetCount)) {
       displayError("Invalid input. Please enter numeric values.");
       return;
     }
 
-    // Create a JSON object with the input data
     const data = {
       good_count: goodCount,
       total_count: totalCount,
@@ -30,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      // Send a POST request to the Flask API
       const response = await fetch("/oee/calculate", {
         method: "POST",
         headers: {
@@ -40,22 +33,36 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (response.ok) {
-        // Parse the response JSON
         const result = await response.json();
-
-        // Display the calculated OEE values in the UI
         displayResult(result);
       } else {
-        // Handle the case when the response is not JSON
         const errorResponse = await response.text();
         throw new Error(errorResponse);
       }
     } catch (error) {
       console.error("Error calculating OEE:", error);
-      // Display an error message in the UI
       displayError(error.message);
     }
   });
+
+  fetch('/asset/all')
+    .then(response => response.json())
+    .then(data => {
+      const container = document.getElementById('treeView');
+      const treeView = generateTreeView(data.data);
+      container.appendChild(treeView);
+
+      const expandAllBtn = document.getElementById('expandAllBtn');
+      const collapseAllBtn = document.getElementById('collapseAllBtn');
+
+      expandAllBtn.addEventListener('click', () => {
+        expandAll();
+      });
+
+      collapseAllBtn.addEventListener('click', () => {
+        collapseAll();
+      });
+    });
 });
 
 // Function to display the calculated OEE values in the UI
@@ -140,4 +147,78 @@ function displayError(message) {
   errorElement.classList.add("error");
   errorElement.textContent = message;
   resultContainer.appendChild(errorElement);
+}
+
+// Function to expand all nodes in the tree view
+function expandAll() {
+  const allNodes = document.querySelectorAll('#treeView .collapsed');
+
+  for(let node of allNodes) {
+    node.classList.remove('collapsed');
+    node.querySelector('ul').classList.remove('hidden');
+  }
+}
+
+// Function to collapse all nodes in the tree view
+function collapseAll() {
+  const allNodes = document.querySelectorAll('#treeView li:not(.no-children)');
+
+  for(let node of allNodes) {
+    node.classList.add('collapsed');
+    node.querySelector('ul').classList.add('hidden');
+  }
+}
+
+
+function generateTreeView(data, collapsed = true) {
+  const ul = document.createElement('ul');
+
+  for (let key in data) {
+    const li = document.createElement('li');
+
+    if (typeof data[key] === 'object' && data[key] !== null) {
+      const span = document.createElement('span');
+      span.textContent = key;
+      span.classList.add('parent-text');
+      li.appendChild(span);
+
+      // Create a caret icon element
+      const caret = document.createElement('span');
+      caret.classList.add('caret');
+      span.insertBefore(caret, span.firstChild);
+
+      const childTreeView = generateTreeView(data[key], collapsed);
+      li.appendChild(childTreeView);
+
+      if (collapsed) {
+        li.classList.add('collapsed');
+        childTreeView.classList.add('hidden');
+      }
+
+      span.addEventListener('click', function (event) {
+        event.stopPropagation();
+        li.classList.toggle('collapsed');
+        childTreeView.classList.toggle('hidden');
+      });
+    } else {
+      const div = document.createElement('div');
+      div.className = 'key-value';
+
+      const keySpan = document.createElement('span');
+      keySpan.textContent = key + ':';
+
+      const valueSpan = document.createElement('span');
+      valueSpan.textContent = data[key];
+
+      div.appendChild(keySpan);
+      div.appendChild(valueSpan);
+
+      li.appendChild(div);
+      li.classList.add('no-children');
+    }
+
+    ul.appendChild(li);
+  }
+
+  return ul;
 }
