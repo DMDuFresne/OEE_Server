@@ -128,7 +128,7 @@ function updateGauge(value, gaugeId) {
     if (value > 0.8) {
       gaugeElement.style.backgroundColor = "var(--success-color)";
     } else if (value > 0.6) {
-      gaugeElement.style.backgroundColor = "var(--primary-color)";
+      gaugeElement.style.backgroundColor = "var(--warning-color)";
     } else {
       gaugeElement.style.backgroundColor = "var(--danger-color)";
     }
@@ -221,4 +221,17 @@ function generateTreeView(data, collapsed = true) {
   }
 
   return ul;
+}
+
+/* -- Glow effect -- */
+
+const blob = document.getElementById("blob");
+
+window.onpointermove = event => {
+  const { clientX, clientY } = event;
+
+  blob.animate({
+    left: `${clientX}px`,
+    top: `${clientY}px`
+  }, { duration: 3000, fill: "forwards" });
 }

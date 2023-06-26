@@ -47,6 +47,40 @@ def get_all_assets_route(asset_class, get_all_func):
     # print(f"Created route: GET {route_path} => {endpoint_name}")
 
 
+def get_parent_asset_route(asset_class, get_func):
+    @limiter.limit("60/minute")
+    def route_get_parent_asset(asset_id):
+        result = get_func(asset_class, asset_id)
+        return result
+
+    endpoint_name = f'route_get_parent_asset_{asset_class.__name__.lower()}'
+    route_path = f'/{asset_class.object_name.lower()}/<int:asset_id>/parent'
+    asset_blueprint.add_url_rule(
+        route_path,
+        endpoint=endpoint_name,
+        view_func=route_get_parent_asset,
+        methods=['GET']
+    )
+    print(f"Created route: GET {route_path} => {endpoint_name}")
+
+
+def get_child_assets_route(asset_class, get_func):
+    @limiter.limit("60/minute")
+    def route_get_child_assets(asset_id):
+        result = get_func(asset_class, asset_id)
+        return result
+
+    endpoint_name = f'route_get_child_assets_{asset_class.__name__.lower()}'
+    route_path = f'/{asset_class.object_name.lower()}/<int:asset_id>/children'
+    asset_blueprint.add_url_rule(
+        route_path,
+        endpoint=endpoint_name,
+        view_func=route_get_child_assets,
+        methods=['GET']
+    )
+    # print(f"Created route: GET {route_path} => {endpoint_name}")
+
+
 def get_asset_route(asset_class, get_func):
     @limiter.limit("60/minute")
     def route_get_asset(asset_id):
@@ -133,3 +167,17 @@ delete_asset_route(SiteModel, delete_asset)
 delete_asset_route(AreaModel, delete_asset)
 delete_asset_route(LineModel, delete_asset)
 delete_asset_route(CellModel, delete_asset)
+
+# parent asset routes
+get_parent_asset_route(EnterpriseModel, get_parent_asset)
+get_parent_asset_route(SiteModel, get_parent_asset)
+get_parent_asset_route(AreaModel, get_parent_asset)
+get_parent_asset_route(LineModel, get_parent_asset)
+get_parent_asset_route(CellModel, get_parent_asset)
+
+# child assets routes
+get_child_assets_route(EnterpriseModel, get_child_assets)
+get_child_assets_route(SiteModel, get_child_assets)
+get_child_assets_route(AreaModel, get_child_assets)
+get_child_assets_route(LineModel, get_child_assets)
+get_child_assets_route(CellModel, get_child_assets)

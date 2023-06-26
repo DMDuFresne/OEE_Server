@@ -1,4 +1,3 @@
-import logging
 from flask import jsonify
 from app.models.asset import *
 from app.models.asset_tree import AssetTreeModel
@@ -40,6 +39,42 @@ def get_all_assets(asset_class):
     except Exception as e:
         logger.error(f"Error occurred while fetching all assets: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred while fetching all assets.'}), 500
+
+
+def get_parent_asset(asset_class, asset_id):
+    try:
+        asset = asset_class()
+
+        if asset.parent_table_name is None:
+            return jsonify({'error': f'{asset.object_name}s have no parent.'}), 500
+
+        assets = asset.get_parent(asset_id)
+        serialized = [asset.__dict__ for asset in assets]
+        return jsonify({
+            'data': serialized,
+            'message': f'the parent of the {asset_class.object_name} retrieved successfully'
+        }), 200
+    except Exception as e:
+        logger.error(f"Error occurred while fetching the parent asset: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An error occurred while fetching the parent asset.'}), 500
+
+
+def get_child_assets(asset_class, asset_id):
+    try:
+        asset = asset_class()
+
+        if asset.child_table_name is None:
+            return jsonify({'error': f'{asset.object_name}s have no children.'}), 500
+
+        assets = asset.get_children(asset_id)
+        serialized = [asset.__dict__ for asset in assets]
+        return jsonify({
+            'data': serialized,
+            'message': f'Children of {asset_class.object_name}s retrieved successfully'
+        }), 200
+    except Exception as e:
+        logger.error(f"Error occurred while fetching child assets: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An error occurred while fetching child assets.'}), 500
 
 
 def get_asset(asset_class, asset_id):

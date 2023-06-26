@@ -4,7 +4,6 @@ from psycopg2 import pool
 from dotenv import load_dotenv
 from contextlib import contextmanager
 import logging
-from .asset_factory import asset_factory
 
 # Load environment variables
 load_dotenv()
@@ -16,7 +15,9 @@ logger = logging.getLogger(__name__)
 
 class AssetModel:
     connection_pool = None
-    table_name = None  # Add a class attribute for the table name
+    table_name = None
+    parent_table_name = None
+    child_table_name = None
     object_name = 'asset'
     object_type = None
 
@@ -152,7 +153,7 @@ class AssetModel:
                 raise Exception("Failed to retrieve the ID of the inserted row")
 
         except Exception as e:
-            logger.error(f"Failed to create {self.table_name}. {e}")
+            logger.error(f"Failed to create {self.object_name}. {e}")
             raise Exception(f"An error occurred while creating the {self.object_name}.")
 
     def get(self, asset_id):
@@ -167,7 +168,7 @@ class AssetModel:
                 self.__dict__.update(data)
                 return self
         except Exception as e:
-            logger.error(f"Failed to get  {self.table_name}. {e}")
+            logger.error(f"Failed to get  {self.object_name}. {e}")
             raise Exception(f"An error occurred while fetching the {self.object_name}.")
 
     def update(self, asset_id):
@@ -180,7 +181,7 @@ class AssetModel:
             return asset
 
         except Exception as e:
-            logger.error(f"Failed to update {self.table_name}. {e}")
+            logger.error(f"Failed to update {self.object_name}. {e}")
             raise Exception(f"An error occurred while updating the {self.object_name}.")
 
     def delete(self):
@@ -190,7 +191,7 @@ class AssetModel:
                 (self.id,)
             )
         except Exception as e:
-            logger.error(f"Failed to delete {self.table_name}. {e}")
+            logger.error(f"Failed to delete {self.object_name}. {e}")
             raise Exception(f"An error occurred while deleting the {self.object_name}.")
 
     def get_all(self):
@@ -204,12 +205,49 @@ class AssetModel:
             assets = [AssetModel(**item) for item in data]
             return assets
         except Exception as e:
-            logger.error(f"Failed to get all {self.table_name}. {e}")
+            logger.error(f"Failed to get all {self.object_name}. {e}")
             raise Exception(f"An error occurred while fetching all {self.object_name}.")
+
+    def get_children(self, asset_id):
+
+        try:
+
+            query = f"""
+                SELECT id, name, description, parent_id, object_type
+                FROM {self.child_table_name}
+                WHERE parent_id = {asset_id} AND NOT deprecated
+            """
+            data = self.fetch_all(query)
+            assets = [AssetModel(**item) for item in data]
+            return assets
+        except Exception as e:
+            logger.error(f"Failed to get children of the {self.object_name}. {e}")
+            raise Exception(f"An error occurred while fetching children of the {self.object_name}.")
+
+    def get_parent(self, asset_id):
+
+        try:
+
+            asset = self.get(asset_id)
+            parent_id = asset.parent_id
+
+            query = f"""
+                SELECT id, name, description, parent_id, object_type
+                FROM {self.parent_table_name}
+                WHERE id = {parent_id} AND NOT deprecated
+            """
+            data = self.fetch_all(query)
+            assets = [AssetModel(**item) for item in data]
+            return assets
+        except Exception as e:
+            logger.error(f"Failed to get the parent of the {self.object_name}. {e}")
+            raise Exception(f"An error occurred while fetching the parent of the {self.object_name}.")
 
 
 class EnterpriseModel(AssetModel):
+    parent_table_name = None
     table_name = 'obj_enterprises'
+    child_table_name = 'obj_sites'
     object_name = 'enterprise'
     object_type = 4
 
@@ -219,7 +257,9 @@ class EnterpriseModel(AssetModel):
 
 
 class SiteModel(AssetModel):
+    parent_table_name = 'obj_enterprises'
     table_name = 'obj_sites'
+    child_table_name = 'obj_areas'
     object_name = 'site'
     object_type = 3
 
@@ -229,7 +269,9 @@ class SiteModel(AssetModel):
 
 
 class AreaModel(AssetModel):
+    parent_table_name = 'obj_sites'
     table_name = 'obj_areas'
+    child_table_name = 'obj_lines'
     object_name = 'area'
     object_type = 2
 
@@ -239,7 +281,9 @@ class AreaModel(AssetModel):
 
 
 class LineModel(AssetModel):
+    parent_table_name = 'obj_areas'
     table_name = 'obj_lines'
+    child_table_name = 'obj_cells'
     object_name = 'line'
     object_type = 1
 
@@ -249,7 +293,9 @@ class LineModel(AssetModel):
 
 
 class CellModel(AssetModel):
+    parent_table_name = 'obj_lines'
     table_name = 'obj_cells'
+    child_table_name = None
     object_name = 'cell'
     object_type = 0
 
